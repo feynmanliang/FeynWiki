@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  {% for h in history %}
+    {{ h.render() | safe }}
+    <br><br>
+  {% endfor %}
+
+{% endblock %}

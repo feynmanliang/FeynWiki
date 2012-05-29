@@ -241,7 +241,6 @@ class Welcome(WikiHandler):
 ##
 
 class Entry(db.Model):
-    """Data model for individual blog post"""
     name = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
@@ -254,6 +253,17 @@ class Entry(db.Model):
     def render(self):
         self._render_text = self.content.replace('\n', '<br>')
         return self.render_str("entry.html", entry = self)
+
+class History(Entry):
+    def render_str(self, template, **params):
+        t = jinja_env.get_template(template)
+        return t.render(params)
+
+    def render(self):
+        self._render_text = self.content.replace('\n', '<br>')
+        return self.render_str("entry.html", entry = self)
+
+
 
 class EditEntry(WikiHandler):
     def get(self, entry_name):
@@ -273,7 +283,12 @@ class EditEntry(WikiHandler):
         name = entry_name
         content = self.request.get('content')
 
-        if name and content:
+        if name and content and self.user:
+            key = db.Key.from_path('Entry', str(entry_name), parent=wiki_key())
+            preventry = db.get(key)
+            if preventry:
+                h = History(parent = key, name = name, content = preventry.content)
+                h.put()
             p = Entry(key_name=name, parent = wiki_key(), name = name, content = content)
             p.put()
             self.redirect('%s' % name)
@@ -292,6 +307,11 @@ class WikiPage(WikiHandler):
 
         self.render("permalink.html", entry = Entry)
 
+class HistoryPage(WikiHandler):
+    def get(self, entry_name):
+        parentkey = db.Key.from_path('Entry', str(entry_name), parent=wiki_key())
+        history = History.all().ancestor(parentkey)
+        self.render('history.html', history = history)
 
 PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
 app = webapp2.WSGIApplication([('/welcome', Welcome),
@@ -299,6 +319,7 @@ app = webapp2.WSGIApplication([('/welcome', Welcome),
                                ('/login', Login),
                                ('/logout', Logout),
                                ('/_edit' + PAGE_RE, EditEntry),
+                               ('/_history' + PAGE_RE, HistoryPage),
                                (PAGE_RE, WikiPage)
                                ],
                               debug=True)
