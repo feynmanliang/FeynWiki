@@ -1,0 +1,15 @@
+<div class="entry">
+  <div class="entry-heading">
+    <div class="entry-title">
+      {{entry.name}}
+    </div>
+
+    <div class="entry-date">
+      Last Edited: {{entry.created.strftime("%b %d, %Y")}}
+    </div>
+  </div>
+
+  <div class="entry-content">
+    {{entry._render_text | safe}}
+  </div>
+</div>
