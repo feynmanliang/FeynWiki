@@ -311,7 +311,12 @@ class HistoryPage(WikiHandler):
     def get(self, entry_name):
         parentkey = db.Key.from_path('Entry', str(entry_name), parent=wiki_key())
         history = History.all().ancestor(parentkey)
-        self.render('history.html', history = history)
+
+        key = db.Key.from_path('Entry', str(entry_name), parent=wiki_key())
+        Entry = db.get(key)
+
+        history = history
+        self.render('history.html', history = history, entry = Entry)
 
 PAGE_RE = r'(/(?:[a-zA-Z0-9_-]+/?)*)'
 app = webapp2.WSGIApplication([('/welcome', Welcome),
